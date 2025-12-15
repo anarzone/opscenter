@@ -85,7 +85,7 @@ jobs:
 
           # Trigger deployment for your site
           # TODO: Ensure FORGE_SITE_URL variable is set or replace with your domain
-          forge deploy ${{ FORGE_SITE_ID || 'https://opscenter.anarzone.com' }}
+          forge deploy $FORGE_SITE_ID || {{ 'https://opscenter.anarzone.com' }}
         env:
           FORGE_API_TOKEN: ${{ secrets.FORGE_API_TOKEN }}
 
