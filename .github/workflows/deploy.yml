@@ -41,7 +41,7 @@ jobs:
 
     environment:
       name: production
-      url: ${{ vars.FORGE_SITE_URL || 'opscenter.anarzone.com' }}
+      url: ${{ vars.FORGE_SITE_URL || 'https://opscenter.anarzone.com' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -85,7 +85,7 @@ jobs:
 
           # Trigger deployment for your site
           # TODO: Ensure FORGE_SITE_URL variable is set or replace with your domain
-          forge deploy ${{ vars.FORGE_SITE_URL || 'opscenter.anarzone.com' }}
+          forge deploy ${{ vars.FORGE_SITE_URL || 'https://opscenter.anarzone.com' }}
         env:
           FORGE_API_TOKEN: ${{ secrets.FORGE_API_TOKEN }}
 
@@ -117,7 +117,7 @@ jobs:
           sleep 10
 
           # TODO: Uncomment the lines below to enable health check
-          # SITE_URL="${{ vars.FORGE_SITE_URL || 'opscenter.anarzone.com' }}"
+          # SITE_URL="${{ vars.FORGE_SITE_URL || 'https://opscenter.anarzone.com' }}"
           # response=$(curl -s -o /dev/null -w "%{http_code}" https://${SITE_URL}/api/health)
           # if [ "$response" != "200" ]; then
           #   echo "❌ Health check failed with status code: $response"
