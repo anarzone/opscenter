@@ -140,5 +140,5 @@ jobs:
 # - Check Forge deployment logs in Forge dashboard
 # - Verify FORGE_API_TOKEN and FORGE_SERVER_ID secrets
 # - Ensure FORGE_SITE_URL variable is set
-# - Review .github/README.md for full documentation
+# - Review .github/docs.md for full documentation
 # ============================================================================

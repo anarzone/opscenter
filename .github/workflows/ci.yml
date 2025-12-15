@@ -158,5 +158,5 @@ jobs:
 # This workflow runs 3 jobs in parallel for faster feedback
 # Estimated run time: 3-5 minutes
 #
-# Need help? Check .github/README.md for full documentation
+# Need help? Check .github/docs.md for full documentation
 # ============================================================================
