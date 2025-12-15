@@ -10,32 +10,17 @@ class NotificationLogPolicy
 {
     use HandlesAuthorization;
 
-    public function viewAny(User $user)
-    {
+    public function viewAny(User $user) {}
 
-    }
+    public function view(User $user, NotificationLog $notificationLog) {}
 
-    public function view(User $user, NotificationLog $notificationLog)
-    {
-    }
+    public function create(User $user) {}
 
-    public function create(User $user)
-    {
-    }
+    public function update(User $user, NotificationLog $notificationLog) {}
 
-    public function update(User $user, NotificationLog $notificationLog)
-    {
-    }
+    public function delete(User $user, NotificationLog $notificationLog) {}
 
-    public function delete(User $user, NotificationLog $notificationLog)
-    {
-    }
+    public function restore(User $user, NotificationLog $notificationLog) {}
 
-    public function restore(User $user, NotificationLog $notificationLog)
-    {
-    }
-
-    public function forceDelete(User $user, NotificationLog $notificationLog)
-    {
-    }
+    public function forceDelete(User $user, NotificationLog $notificationLog) {}
 }

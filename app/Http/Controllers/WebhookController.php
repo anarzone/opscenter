@@ -12,10 +12,10 @@ class WebhookController
 {
     public function handle(WebhookSource $source, Request $request): JsonResponse
     {
-        if (!$source->is_active){
+        if (! $source->is_active) {
             return response()->json([
                 'error' => 'Webhook source is disabled',
-                'source' => $source->slug
+                'source' => $source->slug,
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -25,12 +25,12 @@ class WebhookController
             return response()->json([
                 'status' => 'accepted',
                 'id' => $result['webhook_event_id'],
-                'message' => $result['message']
+                'message' => $result['message'],
             ]);
         } else {
             return response()->json([
                 'error' => $result['message'],
-                'details' => $result['errors']
+                'details' => $result['errors'],
             ], Response::HTTP_UNAUTHORIZED);
         }
     }

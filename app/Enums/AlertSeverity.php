@@ -4,10 +4,10 @@ namespace App\Enums;
 
 enum AlertSeverity: string
 {
-    case INFO = "info";
-    case WARNING = "warning";
-    case ERROR = "error";
-    case CRITICAL = "critical";
+    case INFO = 'info';
+    case WARNING = 'warning';
+    case ERROR = 'error';
+    case CRITICAL = 'critical';
 
     public static function values(): array
     {

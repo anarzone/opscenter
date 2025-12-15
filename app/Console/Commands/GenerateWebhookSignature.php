@@ -34,24 +34,27 @@ class GenerateWebhookSignature extends Command
         // Find the webhook source
         $source = WebhookSource::where('slug', $provider)->first();
 
-        if (!$source) {
+        if (! $source) {
             $this->error("Webhook source '{$provider}' not found in database.");
             $this->line('Available sources:');
-            WebhookSource::all()->each(fn($s) => $this->line("  - {$s->slug}"));
+            WebhookSource::all()->each(fn ($s) => $this->line("  - {$s->slug}"));
+
             return Command::FAILURE;
         }
 
         // Get the payload
         $payload = $this->getPayload();
 
-        if (!$payload) {
+        if (! $payload) {
             $this->error('No payload provided. Use either {payload} argument or --file option.');
+
             return Command::FAILURE;
         }
 
         // Validate JSON
-        if (!$this->isValidJson($payload)) {
+        if (! $this->isValidJson($payload)) {
             $this->error('Invalid JSON payload provided.');
+
             return Command::FAILURE;
         }
 
@@ -62,9 +65,9 @@ class GenerateWebhookSignature extends Command
         $this->info('✓ Signature generated successfully!');
         $this->newLine();
 
-        $this->line('<fg=cyan>Provider:</>     ' . $source->name . ' (' . $provider . ')');
-        $this->line('<fg=cyan>Secret Key:</>   ' . $source->secret_key);
-        $this->line('<fg=cyan>Header Name:</>  ' . $this->getHeaderName($provider));
+        $this->line('<fg=cyan>Provider:</>     '.$source->name.' ('.$provider.')');
+        $this->line('<fg=cyan>Secret Key:</>   '.$source->secret_key);
+        $this->line('<fg=cyan>Header Name:</>  '.$this->getHeaderName($provider));
         $this->newLine();
 
         $this->line('<fg=green;options=bold>Signature:</>');
@@ -83,10 +86,12 @@ class GenerateWebhookSignature extends Command
     {
         // Check if file option is provided
         if ($file = $this->option('file')) {
-            if (!file_exists($file)) {
+            if (! file_exists($file)) {
                 $this->error("File not found: {$file}");
+
                 return null;
             }
+
             return file_get_contents($file);
         }
 
@@ -96,7 +101,7 @@ class GenerateWebhookSignature extends Command
         }
 
         // Try to read from stdin
-        if (!posix_isatty(STDIN)) {
+        if (! posix_isatty(STDIN)) {
             return stream_get_contents(STDIN);
         }
 
@@ -116,10 +121,10 @@ class GenerateWebhookSignature extends Command
      */
     private function generateSignature(string $provider, string $payload, string $secret): string
     {
-        return match($provider) {
+        return match ($provider) {
             'gitlab' => hash_hmac('sha256', $payload, $secret),
             'stripe' => $this->generateStripeSignature($payload, $secret),
-            default => 'sha256=' . hash_hmac('sha256', $payload, $secret),
+            default => 'sha256='.hash_hmac('sha256', $payload, $secret),
         };
     }
 
@@ -129,7 +134,7 @@ class GenerateWebhookSignature extends Command
     private function generateStripeSignature(string $payload, string $secret): string
     {
         $timestamp = time();
-        $signedPayload = $timestamp . '.' . $payload;
+        $signedPayload = $timestamp.'.'.$payload;
         $signature = hash_hmac('sha256', $signedPayload, $secret);
 
         return "t=$timestamp,v1=$signature";
@@ -140,7 +145,7 @@ class GenerateWebhookSignature extends Command
      */
     private function getHeaderName(string $provider): string
     {
-        return match($provider) {
+        return match ($provider) {
             'github' => 'X-Hub-Signature-256',
             'gitlab' => 'X-Gitlab-Token',
             'stripe' => 'Stripe-Signature',

@@ -4,8 +4,8 @@ namespace App\Enums;
 
 enum NotificationLogStatus: string
 {
-    case SENT = "sent";
-    case FAILED = "failed";
+    case SENT = 'sent';
+    case FAILED = 'failed';
 
     public static function values(): array
     {

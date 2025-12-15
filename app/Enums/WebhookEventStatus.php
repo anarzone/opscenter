@@ -4,10 +4,10 @@ namespace App\Enums;
 
 enum WebhookEventStatus: string
 {
-    case PENDING = "pending";
-    case PROCESSING = "processing";
-    case PROCESSED = "processed";
-    case FAILED = "failed";
+    case PENDING = 'pending';
+    case PROCESSING = 'processing';
+    case PROCESSED = 'processed';
+    case FAILED = 'failed';
 
     public static function values(): array
     {

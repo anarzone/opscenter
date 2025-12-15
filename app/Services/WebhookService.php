@@ -11,10 +11,10 @@ use Illuminate\Support\Facades\Log;
 class WebhookService
 {
     private array $signatureKeysMap = [
-        "github" => "X-Hub-Signature-256",
-        "gitlab" => "X-Gitlab-Token",
-        "stripe" => "Stripe-Signature",
-        "custom" => "X-Signature",
+        'github' => 'X-Hub-Signature-256',
+        'gitlab' => 'X-Gitlab-Token',
+        'stripe' => 'Stripe-Signature',
+        'custom' => 'X-Signature',
     ];
 
     public function process(WebhookSource $source, Request $request): array
@@ -24,17 +24,17 @@ class WebhookService
         $signature = $request->header($this->getSignatureKey($source->slug));
         $ipAddress = $request->ip();
 
-        if (!WebhookSignatureValidator::validate($rawPayload, $signature, $source->secret_key, $source->slug)) {
-            Log::warning("Webhook signature validation failed", [
-                "source" => $source->slug,
-                "ip" => $ipAddress,
+        if (! WebhookSignatureValidator::validate($rawPayload, $signature, $source->secret_key, $source->slug)) {
+            Log::warning('Webhook signature validation failed', [
+                'source' => $source->slug,
+                'ip' => $ipAddress,
             ]);
 
             return [
                 'success' => false,
                 'message' => 'Invalid signature',
                 'webhook_event_id' => null,
-                'errors' => ['signature' => 'Signature validation failed'] // Todo: make it dynamic
+                'errors' => ['signature' => 'Signature validation failed'], // Todo: make it dynamic
             ];
         }
 
@@ -46,20 +46,20 @@ class WebhookService
             'signature' => $signature,
             'ip_address' => $ipAddress,
             'status' => WebhookEventStatus::PENDING,
-            'processed_at' => null
+            'processed_at' => null,
         ]);
 
         Log::info('Webhook received successfully', [
             'source' => $source->slug,
             'event_id' => $webhookEvent->id,
-            'event_type' => $webhookEvent->event_type
+            'event_type' => $webhookEvent->event_type,
         ]);
 
         return [
             'success' => true,
             'message' => 'Webhook received and queued for processing',
             'webhook_event_id' => $webhookEvent->id,
-            'errors' => []
+            'errors' => [],
         ];
     }
 
@@ -69,7 +69,7 @@ class WebhookService
             return $this->signatureKeysMap[$key];
         }
 
-        throw new \InvalidArgumentException("Provided Signature key is not valid");
+        throw new \InvalidArgumentException('Provided Signature key is not valid');
     }
 
     private function extractEventTyope(Request $request, string $provider)

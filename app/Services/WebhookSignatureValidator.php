@@ -7,8 +7,8 @@ class WebhookSignatureValidator
     public static function validate(string $payload, string $signature, string $secret, string $provider): bool
     {
         return match ($provider) {
-            "github" => self::validateGithub($payload, $signature, $secret),
-            "stripe" => self::validateStripe($payload, $signature, $secret),
+            'github' => self::validateGithub($payload, $signature, $secret),
+            'stripe' => self::validateStripe($payload, $signature, $secret),
             default => throw new \InvalidArgumentException("Unsupported provider: $provider")
         };
     }
@@ -16,7 +16,7 @@ class WebhookSignatureValidator
     private static function validateGithub(string $payload, string $signature, string $secret): bool
     {
         $hash = hash_hmac('sha256', $payload, $secret);
-        $expectedSignature = 'sha256=' . $hash;
+        $expectedSignature = 'sha256='.$hash;
 
         return hash_equals($expectedSignature, $signature);
     }
@@ -36,10 +36,10 @@ class WebhookSignatureValidator
             }
         }
 
-        $signedPayload = $timestamp . '.' . $payload;
+        $signedPayload = $timestamp.'.'.$payload;
 
         $expectedSignature = hash_hmac('sha256', $signedPayload, $secret);
 
-        return array_any($signatures, fn($sig) => hash_equals($expectedSignature, $sig));
+        return array_any($signatures, fn ($sig) => hash_equals($expectedSignature, $sig));
     }
 }
