@@ -1,0 +1,162 @@
+# ============================================================================
+# CI Pipeline - Continuous Integration for Laravel Projects
+# ============================================================================
+# Purpose: Run quality checks, tests, and build assets on every push/PR
+# Triggers: Push or Pull Request to main/develop branches
+#
+# CUSTOMIZATION:
+# - Change branches: Line 5-7 (add your branch names)
+# - Change PHP version: Line 20 & 47 (e.g., 8.3, 8.4)
+# - Change Node version: Line 101 (e.g., 18, 20)
+# - Add more PHP versions: Line 47 (e.g., [8.3, 8.4])
+# - Switch to PHPUnit: Line 86 (change vendor/bin/pest to vendor/bin/phpunit)
+# ============================================================================
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # ==========================================================================
+  # JOB 1: Code Quality Checks
+  # ==========================================================================
+  # Runs: Laravel Pint (code style) + Composer security audit
+  # Fast fail: Catches style/security issues before running tests
+  # ==========================================================================
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --no-suggest
+
+      - name: Run Laravel Pint (Code Style)
+        run: vendor/bin/pint --test
+        # OPTIONAL: Add --config=pint.json for custom Pint rules
+
+      - name: Check for security vulnerabilities
+        run: composer audit
+        # Checks for known security issues in dependencies
+
+  # ==========================================================================
+  # JOB 2: Run Tests
+  # ==========================================================================
+  # Runs: Full test suite with SQLite in-memory database
+  # Matrix: Can test multiple PHP versions simultaneously
+  # Parallel: Tests run in parallel for speed
+  # ==========================================================================
+  tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php-version: [8.4]  # TODO: Add more versions if needed [8.3, 8.4]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+          coverage: xdebug  # TODO: Change to 'none' if not tracking coverage
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php-version }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Create SQLite database
+        run: touch database/database.sqlite
+
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Run migrations
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+
+      - name: Run tests (Pest)
+        run: vendor/bin/pest --parallel
+        # TODO: Change to vendor/bin/phpunit if using PHPUnit
+        # OPTIONAL: Add --coverage --min=80 for coverage requirements
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+
+  # ==========================================================================
+  # JOB 3: Build Frontend Assets
+  # ==========================================================================
+  # Runs: npm install + build (Vite/Mix)
+  # Validates: Frontend build completes without errors
+  # ==========================================================================
+  build-assets:
+    name: Build Frontend Assets
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci  # TODO: Change to 'yarn install --frozen-lockfile' if using Yarn
+
+      - name: Build assets
+        run: npm run build  # TODO: Change to 'npm run production' if using Mix
+
+      - name: Check for build errors
+        run: |
+          if [ ! -d "public/build" ]; then
+            echo "Build directory not found!"
+            exit 1
+          fi
+          # TODO: Adjust path if your build outputs to different directory
+
+# ============================================================================
+# END OF CI PIPELINE
+# ============================================================================
+# This workflow runs 3 jobs in parallel for faster feedback
+# Estimated run time: 3-5 minutes
+#
+# Need help? Check .github/README.md for full documentation
+# ============================================================================

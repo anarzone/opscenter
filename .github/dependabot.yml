@@ -1,0 +1,141 @@
+# ============================================================================
+# Dependabot Configuration - Automated Dependency Updates
+# ============================================================================
+# Purpose: Automatically check for and create PRs for dependency updates
+# What it updates: Composer packages, npm packages, GitHub Actions
+#
+# How it works:
+# 1. Dependabot checks for updates on schedule
+# 2. Creates PRs for each update
+# 3. CI runs automatically on PRs
+# 4. You review and merge if tests pass
+#
+# REQUIRED SETUP:
+# 1. Replace "YOUR_GITHUB_USERNAME" below with your actual GitHub username
+# 2. Optionally adjust schedules and limits
+# 3. Commit this file to enable Dependabot
+#
+# CUSTOMIZATION:
+# - Change schedule: Lines 9, 28, 46 (daily, weekly, monthly)
+# - Change PR limits: Lines 10, 29, 47 (max open PRs)
+# - Add more reviewers: Lines 17-20, 36-39 (team members)
+# - Change labels: Lines 11-13, 30-32, 48-50 (for organization)
+# ============================================================================
+
+version: 2
+updates:
+  # ==========================================================================
+  # Composer Dependencies (PHP/Laravel packages)
+  # ==========================================================================
+  # Checks: All packages in composer.json
+  # Schedule: Every Monday at 9 AM UTC
+  # Examples: laravel/framework, spatie/laravel-permission, etc.
+  # ==========================================================================
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"  # Options: daily, weekly, monthly
+      day: "monday"       # Only for weekly: monday, tuesday, etc.
+      time: "09:00"       # Time in UTC (24-hour format)
+    open-pull-requests-limit: 5  # Max simultaneous PRs (0-10)
+    labels:
+      - "dependencies"
+      - "composer"
+      # TODO: Add custom labels if you use GitHub Projects
+    commit-message:
+      prefix: "chore"     # Commit prefix (chore, deps, update)
+      include: "scope"    # Include scope in message
+    # TODO: Replace with your GitHub username(s) or remove these lines
+    # reviewers:
+    #   - "YOUR_GITHUB_USERNAME"
+    # assignees:
+    #   - "YOUR_GITHUB_USERNAME"
+
+  # ==========================================================================
+  # NPM Dependencies (JavaScript/Node packages)
+  # ==========================================================================
+  # Checks: All packages in package.json
+  # Schedule: Every Monday at 9 AM UTC
+  # Examples: vite, vue, axios, tailwindcss, etc.
+  # ==========================================================================
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"  # Options: daily, weekly, monthly
+      day: "monday"       # Only for weekly: monday, tuesday, etc.
+      time: "09:00"       # Time in UTC (24-hour format)
+    open-pull-requests-limit: 5  # Max simultaneous PRs (0-10)
+    labels:
+      - "dependencies"
+      - "npm"
+      # TODO: Add custom labels if you use GitHub Projects
+    commit-message:
+      prefix: "chore"     # Commit prefix (chore, deps, update)
+      include: "scope"    # Include scope in message
+    # TODO: Replace with your GitHub username(s) or remove these lines
+    # reviewers:
+    #   - "YOUR_GITHUB_USERNAME"
+    # assignees:
+    #   - "YOUR_GITHUB_USERNAME"
+
+  # ==========================================================================
+  # GitHub Actions (Workflow dependencies)
+  # ==========================================================================
+  # Checks: All actions in .github/workflows/*.yml
+  # Schedule: First day of every month
+  # Examples: actions/checkout@v4, shivammathur/setup-php@v2
+  # Note: Less frequent (monthly) since Actions update less often
+  # ==========================================================================
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"  # Options: daily, weekly, monthly
+    open-pull-requests-limit: 3  # Max simultaneous PRs (0-10)
+    labels:
+      - "dependencies"
+      - "github-actions"
+      # TODO: Add custom labels if you use GitHub Projects
+    commit-message:
+      prefix: "ci"         # Commit prefix (ci, chore, deps)
+      include: "scope"     # Include scope in message
+    # TODO: Replace with your GitHub username(s) or remove these lines
+    # reviewers:
+    #   - "YOUR_GITHUB_USERNAME"
+    # assignees:
+    #   - "YOUR_GITHUB_USERNAME"
+
+# ============================================================================
+# END OF DEPENDABOT CONFIGURATION
+# ============================================================================
+#
+# Optional: Add more ecosystems
+# - Docker: package-ecosystem: "docker"
+# - Terraform: package-ecosystem: "terraform"
+# - Pip (Python): package-ecosystem: "pip"
+#
+# Example: Version updates only (skip ignored packages)
+# ignore:
+#   - dependency-name: "laravel/framework"
+#     versions: ["10.x"]  # Only update within v11
+#
+# Example: Group updates together
+# groups:
+#   development-dependencies:
+#     patterns:
+#       - "laravel/*"
+#       - "spatie/*"
+#
+# Security Updates:
+# Dependabot automatically creates PRs for security vulnerabilities
+# regardless of schedule (this is separate from version updates)
+#
+# After enabling:
+# 1. Dependabot will start creating PRs on next scheduled run
+# 2. Check: Settings → Code security → Dependabot
+# 3. PRs will trigger your CI workflow automatically
+#
+# Pro tip: Enable auto-merge for minor/patch updates:
+# Settings → General → Pull Requests → Allow auto-merge
+#
+# Need help? Check .github/README.md for full documentation
+# ============================================================================

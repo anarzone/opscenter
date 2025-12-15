@@ -1,0 +1,173 @@
+# ============================================================================
+# Pull Request Checks - Extra Validation for PRs
+# ============================================================================
+# Purpose: Run additional checks specific to pull requests
+# Triggers: When a PR is opened, updated, or reopened
+#
+# What makes this different from ci.yml:
+# - PR-specific validations (merge conflicts, debug statements, PR size)
+# - Runs same tests as CI but with extra safety checks
+# - Auto-comments on PR when all checks pass
+#
+# CUSTOMIZATION:
+# - Change PHP version: Line 20 (match your project)
+# - Adjust PR size limits: Lines 72, 76 (files/lines thresholds)
+# - Add more debug patterns: Lines 54-61 (e.g., var_dump, console.log)
+# - Customize PR comment: Line 95 (message when checks pass)
+# - Change test framework: Line 39 (pest → phpunit)
+# ============================================================================
+
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    # Runs on all PRs regardless of target branch
+
+jobs:
+  # ==========================================================================
+  # JOB 1: PR Validation - Run checks and tests
+  # ==========================================================================
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Get full history for git diff comparisons
+
+      # ======================================================================
+      # Setup PHP and Dependencies
+      # ======================================================================
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4  # TODO: Match your project's PHP version
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      # ======================================================================
+      # Code Quality & Tests (duplicate of CI, ensures PR is safe)
+      # ======================================================================
+      - name: Check code style (Pint)
+        run: vendor/bin/pint --test
+        # TODO: Change to your linter if not using Pint
+
+      - name: Run tests
+        run: vendor/bin/pest --parallel
+        # TODO: Change to vendor/bin/phpunit if using PHPUnit
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+
+      # ======================================================================
+      # PR-Specific Checks
+      # ======================================================================
+
+      # Check 1: Merge Conflict Markers
+      # Catches accidentally committed conflict markers
+      - name: Check for merge conflicts markers
+        run: |
+          if grep -r "<<<<<<< HEAD" app/ tests/ config/ routes/ 2>/dev/null; then
+            echo "❌ Merge conflict markers found!"
+            exit 1
+          fi
+          echo "✅ No merge conflicts detected"
+        # TODO: Add more directories if needed (resources/, database/, etc.)
+
+      # Check 2: Debug Statements
+      # Warns about debugging code that shouldn't reach production
+      - name: Check for debug statements
+        run: |
+          # Check for Laravel debug helpers
+          if grep -rn "dd(" app/ tests/ 2>/dev/null | grep -v "vendor"; then
+            echo "⚠️  Warning: Debug statements (dd) found in code"
+            # Not failing the build, just a warning
+          fi
+          if grep -rn "dump(" app/ tests/ 2>/dev/null | grep -v "vendor"; then
+            echo "⚠️  Warning: Debug statements (dump) found in code"
+            # Not failing the build, just a warning
+          fi
+
+          # TODO: Add more patterns if needed:
+          # - var_dump: if grep -rn "var_dump(" ...
+          # - console.log: if grep -rn "console.log(" resources/js/ ...
+          # - ray(): if grep -rn "ray(" ...
+
+          echo "✅ Debug check completed"
+
+      # Check 3: PR Size Analysis
+      # Warns if PR is too large (harder to review)
+      - name: PR size check
+        run: |
+          FILES_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l)
+          LINES_CHANGED=$(git diff --shortstat origin/${{ github.base_ref }}...HEAD | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
+
+          echo "📊 PR Statistics:"
+          echo "Files changed: $FILES_CHANGED"
+          echo "Lines changed: $LINES_CHANGED"
+
+          # TODO: Adjust these thresholds based on your team's preferences
+          if [ "$FILES_CHANGED" -gt 50 ]; then
+            echo "⚠️  Warning: Large PR with $FILES_CHANGED files changed. Consider breaking it down."
+          fi
+
+          if [ "$LINES_CHANGED" -gt 1000 ]; then
+            echo "⚠️  Warning: Large PR with $LINES_CHANGED+ lines changed. Consider breaking it down."
+          fi
+
+          # Tip: These are warnings, not failures. Adjust to your workflow.
+
+  # ==========================================================================
+  # JOB 2: Comment on PR - Auto-comment when checks pass
+  # ==========================================================================
+  comment-on-pr:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    needs: pr-validation  # Only runs if validation passes
+    if: success()
+
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ All PR checks passed! Your code looks good.'
+              // TODO: Customize this message for your team
+            })
+
+# ============================================================================
+# END OF PR CHECKS WORKFLOW
+# ============================================================================
+# This workflow provides an extra safety layer for pull requests
+#
+# Why separate from CI?
+# - PR-specific checks (conflicts, size) don't apply to direct pushes
+# - Allows different failure policies (warnings vs hard failures)
+# - Cleaner separation of concerns
+#
+# Optional Enhancements:
+# - Add code coverage requirements
+# - Check for TODOs or FIXMEs
+# - Validate commit message format
+# - Check for proper documentation updates
+# - Lint commit history
+#
+# Need help? Check .github/README.md for full documentation
+# ============================================================================

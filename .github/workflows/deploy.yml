@@ -1,0 +1,144 @@
+# ============================================================================
+# Deployment Workflow - Deploy Laravel to Forge
+# ============================================================================
+# Purpose: Automatically deploy to production after CI passes
+# Triggers: After successful CI run on main branch, OR manual trigger
+#
+# REQUIRED SECRETS (Add in GitHub Settings → Secrets):
+# - FORGE_API_TOKEN: Your Laravel Forge API token
+# - FORGE_SERVER_ID: Your Forge server ID (e.g., 906819)
+#
+# REQUIRED VARIABLES (Add in GitHub Settings → Variables):
+# - FORGE_SITE_URL: Your production domain (e.g., yoursite.com)
+#
+# CUSTOMIZATION:
+# - Change deployment branch: Line 8 (default: main)
+# - Change PHP version: Line 28 (match your production server)
+# - Enable health check: Uncomment lines 70-75
+# - Change environment name: Line 19 (e.g., staging, production)
+# ============================================================================
+
+name: Deploy to Laravel Forge
+
+on:
+  # Deploy after CI Pipeline completes successfully
+  workflow_run:
+    workflows: ["CI Pipeline"]  # Must match the name in ci.yml
+    types:
+      - completed
+    branches: [ main ]
+
+  # Allow manual deployment via GitHub UI (bypasses CI wait)
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+
+    # Safety: Only deploy if CI passed OR manually triggered
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    environment:
+      name: production
+      url: ${{ vars.FORGE_SITE_URL || 'opscenter.anarzone.com' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ======================================================================
+      # Setup PHP (needed for Forge CLI)
+      # ======================================================================
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          tools: composer:v2
+          coverage: none
+
+      # ======================================================================
+      # Install Laravel Forge CLI
+      # ======================================================================
+      - name: Install Forge CLI
+        run: |
+          composer global require laravel/forge-cli
+          echo "$HOME/.composer/vendor/bin" >> $GITHUB_PATH
+
+      # ======================================================================
+      # Debug: Verify Forge access (optional, can be removed in production)
+      # ======================================================================
+      - name: Debug Forge resources
+        run: |
+          forge --version
+          forge servers
+        env:
+          FORGE_API_TOKEN: ${{ secrets.FORGE_API_TOKEN }}
+
+      # ======================================================================
+      # DEPLOY: Trigger deployment on Laravel Forge
+      # ======================================================================
+      - name: Deploy to Forge
+        id: deployment
+        run: |
+          # Switch to the correct Forge server
+          forge server:switch ${{ secrets.FORGE_SERVER_ID }}
+
+          # Trigger deployment for your site
+          # TODO: Ensure FORGE_SITE_URL variable is set or replace with your domain
+          forge deploy ${{ vars.FORGE_SITE_URL || 'opscenter.anarzone.com' }}
+        env:
+          FORGE_API_TOKEN: ${{ secrets.FORGE_API_TOKEN }}
+
+      # ======================================================================
+      # Notification: Report deployment status
+      # ======================================================================
+      - name: Deployment notification
+        if: always()  # Run even if previous steps failed
+        run: |
+          if [ "${{ steps.deployment.outcome }}" == "success" ]; then
+            echo "✅ Deployment successful!"
+          else
+            echo "❌ Deployment failed!"
+            exit 1
+          fi
+
+      # ======================================================================
+      # Health Check (OPTIONAL - Uncomment to enable)
+      # ======================================================================
+      # Prerequisites:
+      # 1. Add a health check endpoint to your Laravel app:
+      #    Route::get('/api/health', fn() => response()->json(['status' => 'ok']));
+      # 2. Uncomment the curl command below
+      # ======================================================================
+      - name: Health check (optional)
+        if: success()
+        run: |
+          echo "Waiting for deployment to settle..."
+          sleep 10
+
+          # TODO: Uncomment the lines below to enable health check
+          # SITE_URL="${{ vars.FORGE_SITE_URL || 'opscenter.anarzone.com' }}"
+          # response=$(curl -s -o /dev/null -w "%{http_code}" https://${SITE_URL}/api/health)
+          # if [ "$response" != "200" ]; then
+          #   echo "❌ Health check failed with status code: $response"
+          #   exit 1
+          # fi
+          # echo "✅ Health check passed"
+
+# ============================================================================
+# END OF DEPLOYMENT WORKFLOW
+# ============================================================================
+# What happens after deployment:
+# 1. Forge runs your deployment script (configured in Forge dashboard)
+# 2. Typically: git pull → composer install → migrations → cache clear
+# 3. Your site is updated with the latest code
+#
+# Manual deployment:
+# GitHub Actions → Deploy to Laravel Forge → Run workflow → Run workflow
+#
+# Troubleshooting:
+# - Check Forge deployment logs in Forge dashboard
+# - Verify FORGE_API_TOKEN and FORGE_SERVER_ID secrets
+# - Ensure FORGE_SITE_URL variable is set
+# - Review .github/README.md for full documentation
+# ============================================================================

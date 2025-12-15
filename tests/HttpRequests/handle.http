@@ -1,0 +1,211 @@
+###
+# GitHub Webhook - Push Event
+#
+# To calculate a valid HMAC-SHA256 signature, use this PHP code:
+#
+# $secret = 'your_secret_from_database';
+# $payload = '{"ref":"refs/heads/main",...}'; // The exact JSON body
+# $signature = 'sha256=' . hash_hmac('sha256', $payload, $secret);
+#
+# Then use that signature in the X-Hub-Signature-256 header below.
+###
+
+POST  {{host}}/api/webhooks/github?XDEBUG_SESSION_START=1
+Content-Type: application/json
+Accept: application/json
+X-GitHub-Event: push
+X-GitHub-Delivery: 12345678-1234-1234-1234-123456789012
+X-Hub-Signature-256: sha256=0c0782e4c328296136b685bdc5b6089f5cfb642ae9b47079c2b11bf8f19ddf85
+
+{
+    "ref": "refs/heads/main",
+    "before": "a10867b14bb761a232cd80139fbd4c0d33264240",
+    "after": "b20867b14bb761a232cd80139fbd4c0d33264241",
+    "repository": {
+        "id": 135493233,
+        "name": "Hello-World",
+        "full_name": "octocat/Hello-World",
+        "private": false,
+        "owner": {
+            "name": "octocat",
+            "email": "octocat@github.com"
+        },
+        "html_url": "https://github.com/octocat/Hello-World",
+        "description": "My first repository on GitHub!"
+    },
+    "pusher": {
+        "name": "octocat",
+        "email": "octocat@github.com"
+    },
+    "sender": {
+        "login": "octocat",
+        "id": 1,
+        "avatar_url": "https://github.com/images/error/octocat_happy.gif",
+        "type": "User"
+    },
+    "commits": [
+        {
+            "id": "b20867b14bb761a232cd80139fbd4c0d33264241",
+            "message": "Fix all the bugs",
+            "timestamp": "2024-01-15T10:30:00-08:00",
+            "author": {
+                "name": "octocat",
+                "email": "octocat@github.com",
+                "username": "octocat"
+            },
+            "added": ["README.md"],
+            "removed": [],
+            "modified": ["app/Console/Kernel.php"]
+        }
+    ]
+}
+
+
+###
+# GitHub Webhook - Pull Request Opened
+###
+
+POST http://localhost:8000/api/webhooks/github
+Content-Type: application/json
+Accept: application/json
+X-GitHub-Event: pull_request
+X-GitHub-Delivery: 12345678-1234-1234-1234-123456789013
+X-Hub-Signature-256: sha256=REPLACE_WITH_VALID_SIGNATURE
+
+{
+  "action": "opened",
+  "number": 2,
+  "pull_request": {
+    "id": 1,
+    "number": 2,
+    "state": "open",
+    "title": "Update the README with new information",
+    "user": {
+      "login": "octocat",
+      "id": 1
+    },
+    "body": "This is a pretty simple change that we need to pull into main.",
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:30:00Z",
+    "html_url": "https://github.com/octocat/Hello-World/pull/2",
+    "head": {
+      "ref": "feature-branch",
+      "sha": "b20867b14bb761a232cd80139fbd4c0d33264241"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "a10867b14bb761a232cd80139fbd4c0d33264240"
+    }
+  },
+  "repository": {
+    "id": 135493233,
+    "name": "Hello-World",
+    "full_name": "octocat/Hello-World"
+  },
+  "sender": {
+    "login": "octocat",
+    "id": 1
+  }
+}
+
+###
+# GitHub Webhook - Issues Opened
+###
+
+POST http://localhost:8000/api/webhooks/github
+Content-Type: application/json
+Accept: application/json
+X-GitHub-Event: issues
+X-GitHub-Delivery: 12345678-1234-1234-1234-123456789014
+X-Hub-Signature-256: sha256=REPLACE_WITH_VALID_SIGNATURE
+
+{
+  "action": "opened",
+  "issue": {
+    "id": 1,
+    "number": 10,
+    "title": "Found a bug",
+    "user": {
+      "login": "octocat",
+      "id": 1
+    },
+    "state": "open",
+    "body": "I'm having a problem with this.",
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:30:00Z",
+    "html_url": "https://github.com/octocat/Hello-World/issues/10"
+  },
+  "repository": {
+    "id": 135493233,
+    "name": "Hello-World",
+    "full_name": "octocat/Hello-World"
+  },
+  "sender": {
+    "login": "octocat",
+    "id": 1
+  }
+}
+
+###
+# Stripe Webhook - Payment Success
+#
+# Stripe uses a different signature format in the Stripe-Signature header
+# Format: t=timestamp,v1=signature
+###
+
+POST http://localhost:8000/api/webhooks/stripe
+Content-Type: application/json
+Accept: application/json
+Stripe-Signature: t=1234567890,v1=REPLACE_WITH_VALID_SIGNATURE
+
+{
+  "id": "evt_1234567890",
+  "object": "event",
+  "type": "payment_intent.succeeded",
+  "data": {
+    "object": {
+      "id": "pi_1234567890",
+      "amount": 2000,
+      "currency": "usd",
+      "status": "succeeded",
+      "customer": "cus_1234567890",
+      "description": "Payment for order #1234"
+    }
+  },
+  "created": 1234567890
+}
+
+###
+# Custom Webhook - Simple Test (No Signature Required)
+###
+
+POST http://localhost:8000/api/webhooks/custom
+Content-Type: application/json
+Accept: application/json
+X-Signature: sha256=REPLACE_WITH_VALID_SIGNATURE
+
+{
+  "event": "user.created",
+  "data": {
+    "user_id": 123,
+    "email": "user@example.com",
+    "name": "John Doe",
+    "created_at": "2024-01-15T10:30:00Z"
+  },
+  "timestamp": 1234567890
+}
+
+###
+# Helper: Generate Signature Using PHP
+#
+# Run this in Laravel Tinker to generate a valid signature:
+#
+# php artisan tinker
+#
+# $secret = \App\Models\WebhookSource::where('slug', 'github')->value('secret_key');
+# $payload = '{"ref":"refs/heads/main","repository":{"name":"Hello-World"}}';
+# $signature = 'sha256=' . hash_hmac('sha256', $payload, $secret);
+# echo $signature;
+#
+# Then copy the signature and paste it into the X-Hub-Signature-256 header above.
+###
