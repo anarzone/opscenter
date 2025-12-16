@@ -84,7 +84,7 @@ jobs:
           forge server:switch $FORGE_SERVER_ID
 
           # Trigger deployment for your site
-          forge deploy ${{ 'opscenter.on-forge.com' }}
+          forge deploy $FORGE_SITE_PATH
         env:
           FORGE_API_TOKEN: ${{ secrets.FORGE_API_TOKEN }}
 
