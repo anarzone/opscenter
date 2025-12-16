@@ -81,7 +81,7 @@ jobs:
         id: deployment
         run: |
           # Switch to the correct Forge server
-          # forge server:switch $FORGE_SERVER_ID
+          forge server:switch $FORGE_SERVER_ID
 
           # Trigger deployment for your site
           forge deploy ${{ 'opscenter.on-forge.com' }}
